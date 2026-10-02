@@ -132,6 +132,38 @@ class FlaskRouteTests(unittest.TestCase):
         self.assertNotIn("role=\"status\"", page)
         self.assertNotIn("Technician-provided field measurement:", page)
 
+    def test_clear_button_submits_empty_get_and_returns_clean_form(self):
+        submitted_values = dict(
+            PRIMARY_CASE,
+            battery_bank_voltage_under_load="Infinity",
+            battery_bank_voltage_at_rest="25.4",
+            individual_battery_voltages_at_rest="12.7, 12.7",
+            measured_actual_load_w="920",
+            inverter_alarm_code="E01",
+            field_notes="Private field note",
+        )
+        submitted_page = self.client.post("/", data=submitted_values).get_data(as_text=True)
+
+        self.assertIn("role=\"status\"", submitted_page)
+        self.assertIn("Nominal battery energy:", submitted_page)
+        self.assertIn("Private field note", submitted_page)
+
+        response = self.client.get("/")
+        page = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            '<button type="submit" form="clear-case-form" class="button-secondary">Clear</button>',
+            page,
+        )
+        self.assertIn('<form id="clear-case-form" action="/" method="get" hidden></form>', page)
+        self.assertNotIn("role=\"alert\"", page)
+        self.assertNotIn("role=\"status\"", page)
+        self.assertNotIn("Nominal battery energy:", page)
+        self.assertNotIn("Private field note", page)
+        self.assertIn('name="field_notes" rows="3"></textarea>', page)
+        self.assertIn('name="inverter_alarm_code" type="text"\n                 value="">', page)
+
     def test_valid_optional_readings_are_distinct_from_calculated_results(self):
         values = dict(
             PRIMARY_CASE,

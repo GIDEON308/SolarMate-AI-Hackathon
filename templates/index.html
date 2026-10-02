@@ -164,8 +164,12 @@
           {% if "symptom" in errors %}<p class="field-error">{{ errors.symptom }}</p>{% endif %}
         </div>
       </div>
-      <button type="submit">Analyze System</button>
+      <div class="form-actions">
+        <button type="submit">Analyze System</button>
+        <button type="submit" form="clear-case-form" class="button-secondary">Clear</button>
+      </div>
     </form>
+    <form id="clear-case-form" action="/" method="get" hidden></form>
 
     {% if result %}
     <section class="card" aria-labelledby="calculations-title">

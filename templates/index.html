@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SolarMate AI | Under-load troubleshooting</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>SolarMate AI</h1>
+      <p>Troubleshoot solar system shutdowns and poor performance under load.</p>
+    </header>
+
+    <section class="safety" aria-label="Safety notice">
+      <strong>Safety first:</strong> Follow safe electrical procedures and verify
+      guidance with actual measurements and equipment specifications.
+    </section>
+
+    {% if errors %}
+    <section class="notice error" role="alert" aria-label="Input errors">
+      <strong>Check these inputs before analysis:</strong>
+      <ul>
+        {% for field, message in errors.items() %}
+        {% if field == "_form" %}<li>{{ message }}</li>{% endif %}
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <form method="post" action="/" novalidate>
+      <h2>System Details</h2>
+      <div class="fields">
+        <div>
+          <label for="system_voltage">System voltage</label>
+          <select id="system_voltage" name="system_voltage" required
+                  aria-invalid="{{ 'true' if 'system_voltage' in errors else 'false' }}">
+            <option value="">Select voltage</option>
+            {% for voltage in ("12", "24", "48") %}
+            <option value="{{ voltage }}" {% if values.system_voltage == voltage %}selected{% endif %}>{{ voltage }}V</option>
+            {% endfor %}
+          </select>
+          {% if "system_voltage" in errors and errors.system_voltage != errors.get("_form") %}<p class="field-error">{{ errors.system_voltage }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery_quantity">Battery quantity</label>
+          <input id="battery_quantity" name="battery_quantity" type="number" min="1" step="1" required
+                 value="{{ values.battery_quantity }}"
+                 aria-invalid="{{ 'true' if 'battery_quantity' in errors else 'false' }}">
+          {% if "battery_quantity" in errors and errors.battery_quantity != errors.get("_form") %}<p class="field-error">{{ errors.battery_quantity }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery_voltage">Nominal voltage per battery (V)</label>
+          <input id="battery_voltage" name="battery_voltage" type="number" min="0" step="any" required
+                 value="{{ values.battery_voltage }}"
+                 aria-invalid="{{ 'true' if 'battery_voltage' in errors else 'false' }}">
+          {% if "battery_voltage" in errors and errors.battery_voltage != errors.get("_form") %}<p class="field-error">{{ errors.battery_voltage }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery_capacity_ah">Capacity per battery (Ah)</label>
+          <input id="battery_capacity_ah" name="battery_capacity_ah" type="number" min="0" step="any" required
+                 value="{{ values.battery_capacity_ah }}"
+                 aria-invalid="{{ 'true' if 'battery_capacity_ah' in errors else 'false' }}">
+          {% if "battery_capacity_ah" in errors %}<p class="field-error">{{ errors.battery_capacity_ah }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="connection">Battery connection</label>
+          <select id="connection" name="connection" required
+                  aria-invalid="{{ 'true' if 'connection' in errors else 'false' }}">
+            <option value="">Select connection</option>
+            <option value="series" {% if values.connection == "series" %}selected{% endif %}>Series</option>
+            <option value="parallel" {% if values.connection == "parallel" %}selected{% endif %}>Parallel</option>
+          </select>
+          {% if "connection" in errors and errors.connection != errors.get("_form") %}<p class="field-error">{{ errors.connection }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="battery_type">Battery type (optional)</label>
+          <select id="battery_type" name="battery_type">
+            <option value="">Select if known</option>
+            {% for kind in ("Tubular lead-acid", "AGM", "Gel", "Lithium", "Other") %}
+            <option value="{{ kind }}" {% if values.battery_type == kind %}selected{% endif %}>{{ kind }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="inverter_rating_w">Inverter continuous rating (W)</label>
+          <input id="inverter_rating_w" name="inverter_rating_w" type="number" min="0" step="any" required
+                 value="{{ values.inverter_rating_w }}"
+                 aria-invalid="{{ 'true' if 'inverter_rating_w' in errors else 'false' }}">
+          {% if "inverter_rating_w" in errors %}<p class="field-error">{{ errors.inverter_rating_w }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="load_w">Approximate load (W)</label>
+          <input id="load_w" name="load_w" type="number" min="0" step="any" required
+                 value="{{ values.load_w }}"
+                 aria-invalid="{{ 'true' if 'load_w' in errors else 'false' }}">
+          {% if "load_w" in errors %}<p class="field-error">{{ errors.load_w }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="symptom">Primary symptom</label>
+          <select id="symptom" name="symptom" required
+                  aria-invalid="{{ 'true' if 'symptom' in errors else 'false' }}">
+            <option value="">Select symptom</option>
+            {% for key, symptom in symptoms.items() %}
+            <option value="{{ key }}" {% if values.symptom == key %}selected{% endif %}>{{ symptom }}</option>
+            {% endfor %}
+          </select>
+          {% if "symptom" in errors %}<p class="field-error">{{ errors.symptom }}</p>{% endif %}
+        </div>
+      </div>
+      <button type="submit">Analyze System</button>
+    </form>
+
+    {% if result %}
+    <section class="card" aria-labelledby="calculations-title">
+      <h2 id="calculations-title">Calculations</h2>
+      <p><strong>Battery-bank configuration:</strong>
+        {{ result.battery_quantity }} × {{ result.battery_voltage }}V
+        {{ result.battery_capacity_ah }}Ah batteries in {{ values.connection|title }}
+        = {{ result.bank_voltage }}V, {{ result.bank_capacity_ah }}Ah
+      </p>
+      <p class="metric">Nominal battery energy: {{ result.nominal_energy_display }} kWh
+        ({{ result.nominal_energy_wh }} Wh)</p>
+      <p>{{ result.energy_explanation }}</p>
+      <p class="metric">Estimated DC current before inverter losses:
+        {{ result.estimated_dc_current_display }} A</p>
+      <p>{{ result.current_explanation }}</p>
+      <p><strong>Load compared with inverter rating:</strong>
+        {{ result.load_w }}W / {{ result.inverter_rating_w }}W =
+        {{ result.inverter_loading_display }}% of continuous rating.</p>
+      <p>{{ result.inverter_interpretation }}</p>
+    </section>
+
+    <section class="card" aria-labelledby="measurements-title">
+      <h2 id="measurements-title">Measurements</h2>
+      <p><strong>Calculated values above</strong> are based on entered specifications.
+        They are not actual field measurements.</p>
+      <p>{{ result.measurements_status }}</p>
+    </section>
+
+    <section class="card" aria-labelledby="checks-title">
+      <h2 id="checks-title">Troubleshooting Checks</h2>
+      <ol>{% for check in result.checks %}<li>{{ check }}</li>{% endfor %}</ol>
+    </section>
+
+    <section class="card safety" aria-labelledby="safety-title">
+      <h2 id="safety-title">Safety</h2>
+      <ul>{% for note in result.safety %}<li>{{ note }}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

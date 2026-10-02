@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SolarMate AI — App Map</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #182c2a;
+      background: #f5f8f5;
+      --green: #176b4a;
+      --yellow: #f2c94c;
+      --border: #d9e3dd;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      border-bottom: 3px solid var(--yellow);
+      padding-bottom: 1rem;
+    }
+
+    h1,
+    h2 {
+      color: var(--green);
+    }
+
+    h1 {
+      margin-bottom: .3rem;
+    }
+
+    h2 {
+      margin-top: 2rem;
+    }
+
+    .notice,
+    .practice {
+      border-left: 5px solid var(--yellow);
+      background: #fff8df;
+      padding: .8rem 1rem;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .flow li {
+      position: relative;
+      min-width: 0;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--green);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .flow li:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 42%;
+      right: -.9rem;
+      z-index: 1;
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .flow h3 {
+      margin: 0 0 .5rem;
+      font-size: 1rem;
+    }
+
+    code {
+      overflow-wrap: anywhere;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    a {
+      color: #145d42;
+      text-underline-offset: .15em;
+    }
+
+    li + li,
+    p + p {
+      margin-top: .55rem;
+    }
+
+    .route li {
+      margin-bottom: .8rem;
+    }
+
+    @media (max-width: 700px) {
+      main {
+        padding: 1rem .75rem 2rem;
+      }
+
+      .flow {
+        grid-template-columns: 1fr;
+        gap: .7rem;
+      }
+
+      .flow li:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>SolarMate AI — App Map</h1>
+      <p>A local, deterministic proof of concept for investigating solar inverter shutdown under load.</p>
+    </header>
+
+    <p class="notice">
+      This map follows the current application code. It is a local snapshot, not
+      a separate app page, and may drift if the source changes.
+    </p>
+
+    <h2>One case, from form to guidance</h2>
+    <ol class="flow" aria-label="SolarMate request flow">
+      <li>
+        <h3>Technician input</h3>
+        <p><a href="../templates/index.html">templates/index.html</a></p>
+        <p>Named form fields are sent as a POST to <code>/</code>.</p>
+      </li>
+      <li>
+        <h3>Flask route</h3>
+        <p><a href="../app.py">app.py</a>, <code>index()</code></p>
+        <p>Receives the submitted values and connects validation, guidance, and rendering.</p>
+      </li>
+      <li>
+        <h3>Local analysis and guidance</h3>
+        <p><a href="../solarmate/analysis.py">solarmate/analysis.py</a>, <code>analyze_case()</code></p>
+        <p><a href="../solarmate/guidance.py">solarmate/guidance.py</a>, <code>guidance_for_case()</code></p>
+        <p>Validates inputs, calculates results, and supplies fixed ordered checks and safety notes.</p>
+      </li>
+      <li>
+        <h3>Rendered results</h3>
+        <p><a href="../templates/index.html">templates/index.html</a></p>
+        <p>Separates calculations, technician readings, troubleshooting checks, and safety.</p>
+      </li>
+    </ol>
+
+    <h2>Guided source route</h2>
+    <p>
+      The guided walkthrough covered these actual source sections in chat. This
+      route is for revisiting the same behavior in an editor; it does not claim
+      that the learner separately navigated each file in the editor.
+    </p>
+    <ol class="route">
+      <li>
+        <a href="../templates/index.html">templates/index.html</a> —
+        find the POST form, then the Calculations, Measurements, Troubleshooting
+        Checks, and Safety sections. The first shows result fields computed by
+        Python; the second displays only accepted technician readings.
+      </li>
+      <li>
+        <a href="../app.py">app.py</a> —
+        find <code>index()</code> to see how submitted values go to
+        <a href="../solarmate/analysis.py">analysis.py</a>'s
+        <code>analyze_case()</code>, then how successful results are enriched
+        with guidance before rendering.
+      </li>
+      <li>
+        <a href="../solarmate/guidance.py">solarmate/guidance.py</a> —
+        find <code>TROUBLESHOOTING_CHECKS</code>,
+        <code>SAFETY_GUIDANCE</code>, and <code>guidance_for_case()</code>.
+        Their ordered content is rendered by the corresponding lists in
+        <a href="../templates/index.html">index.html</a>.
+      </li>
+    </ol>
+
+    <h2>To change this, start here</h2>
+    <ul>
+      <li>Form fields or result labels: <a href="../templates/index.html">templates/index.html</a>.</li>
+      <li>Validation, bank calculations, or optional-reading rules: <a href="../solarmate/analysis.py">solarmate/analysis.py</a>.</li>
+      <li>Fixed troubleshooting wording or safety notes: <a href="../solarmate/guidance.py">solarmate/guidance.py</a>.</li>
+      <li>Rendered behavior regression coverage: <a href="../tests/test_routes.py">tests/test_routes.py</a>.</li>
+      <li>Local setup and demo inputs: <a href="../README.md">README.md</a>.</li>
+    </ul>
+
+    <h2>A practice to reuse</h2>
+    <p class="practice">
+      Turn a product requirement into an observable result, then test that
+      result. Here the approved primary-case figures are checked in
+      <code>tests/test_routes.py</code>, and the rendered check list is compared
+      directly with the fixed tuple in <code>guidance.py</code>. On another
+      project, the same approach helps catch mismatches between what was agreed
+      and what users actually see.
+    </p>
+
+    <h2>Run this project again</h2>
+    <p>From the project folder in Windows PowerShell or Command Prompt:</p>
+    <pre><code>py -3 -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+python app.py</code></pre>
+    <p>Open <code>http://127.0.0.1:5000</code>. Run checks with:</p>
+    <pre><code>python -m unittest discover -s tests</code></pre>
+    <p>
+      This map uses application source snapshot
+      <code>978590cf9832755265e2ea712f0a4d2400a21595</code>
+      (<code>Improve field-ready presentation and instructions</code>). The map
+      and its Build record are created after that commit, so the map itself is
+      not included in the source snapshot.
+    </p>
+  </main>
+</body>
+</html>

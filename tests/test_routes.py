@@ -1,8 +1,12 @@
+from html import unescape
+from pathlib import Path
+import re
 import unittest
 from unittest.mock import patch
 
 import app as solar_app
 from app import app
+from solarmate.guidance import TROUBLESHOOTING_CHECKS
 
 
 PRIMARY_CASE = {
@@ -49,6 +53,38 @@ class FlaskRouteTests(unittest.TestCase):
         self.assertIn("The entered load is below the inverter&#39;s continuous rating", page)
         self.assertIn("Troubleshooting Checks", page)
         self.assertIn("Avoid short circuits", page)
+
+    def test_results_distinguish_calculations_measurements_and_ordered_checks(self):
+        response = self.client.post("/", data=PRIMARY_CASE)
+        page = response.get_data(as_text=True)
+        checks_section = page.split(
+            '<section class="card" aria-labelledby="checks-title">', 1
+        )[1].split("</section>", 1)[0]
+        rendered_checks = [
+            re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", "", item))).strip()
+            for item in re.findall(r"<li>(.*?)</li>", checks_section, re.S)
+        ]
+
+        self.assertIn("CALCULATED / ESTIMATED", page)
+        self.assertIn("TECHNICIAN-PROVIDED / REAL FIELD READINGS", page)
+        self.assertIn(
+            "Calculate → Measure → Compare → Inspect → Verify → Retest",
+            page,
+        )
+        self.assertEqual(rendered_checks, list(TROUBLESHOOTING_CHECKS))
+
+    def test_readme_and_styles_include_local_run_and_responsive_layout(self):
+        project_root = Path(__file__).resolve().parents[1]
+        readme = (project_root / "README.md").read_text(encoding="utf-8")
+        styles = (project_root / "static" / "css" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn("python app.py", readme)
+        self.assertIn("http://127.0.0.1:5000", readme)
+        self.assertIn("python -m unittest discover -s tests", readme)
+        self.assertIn("@media (max-width: 640px)", styles)
+        self.assertIn("grid-template-columns: repeat(2, minmax(0, 1fr));", styles)
+        self.assertIn("grid-template-columns: 1fr;", styles)
+        self.assertIn(".card.safety", styles)
 
     def test_invalid_submission_preserves_entered_values(self):
         values = dict(PRIMARY_CASE, battery_capacity_ah="")
@@ -178,9 +214,9 @@ class FlaskRouteTests(unittest.TestCase):
 
         response = self.client.post("/", data=values)
         page = response.get_data(as_text=True)
-        measurements = page.split(
-            '<section class="card" aria-labelledby="measurements-title">', 1
-        )[1].split("</section>", 1)[0]
+        measurements = page.split('aria-labelledby="measurements-title">', 1)[1].split(
+            "</section>", 1
+        )[0]
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Battery-bank voltage at rest", page)

@@ -31,6 +31,7 @@
 
     <form method="post" action="/" novalidate>
       <h2>System Details</h2>
+      <p class="section-intro">Enter required system details first. Field readings and observations are optional.</p>
       <div class="fields">
         <div>
           <label for="system_voltage">System voltage</label>
@@ -172,8 +173,10 @@
     <form id="clear-case-form" action="/" method="get" hidden></form>
 
     {% if result %}
-    <section class="card" aria-labelledby="calculations-title">
+    <section class="card result-card calculated-card" aria-labelledby="calculations-title">
+      <p class="section-kicker">CALCULATED / ESTIMATED</p>
       <h2 id="calculations-title">Calculations</h2>
+      <p class="section-intro">Derived from the system details you entered—not measured readings.</p>
       <p><strong>Battery-bank configuration:</strong>
         {{ result.battery_quantity }} × {{ result.battery_voltage }}V
         {{ result.battery_capacity_ah }}Ah batteries in {{ values.connection|title }}
@@ -191,10 +194,9 @@
       <p>{{ result.inverter_interpretation }}</p>
     </section>
 
-    <section class="card" aria-labelledby="measurements-title">
+    <section class="card result-card measurement-card" aria-labelledby="measurements-title">
+      <p class="section-kicker">TECHNICIAN-PROVIDED / REAL FIELD READINGS</p>
       <h2 id="measurements-title">Measurements</h2>
-      <p><strong>Calculated values above</strong> are based on entered specifications.
-        They are not actual field measurements.</p>
       <p>{{ result.measurements_status }}</p>
       {% for measurement in result.field_measurements %}
       <p><strong>{{ measurement.label }} (technician-provided field measurement):</strong>
@@ -208,11 +210,15 @@
 
     <section class="card" aria-labelledby="checks-title">
       <h2 id="checks-title">Troubleshooting Checks</h2>
+      <p class="check-flow" aria-label="Troubleshooting sequence">
+        Calculate → Measure → Compare → Inspect → Verify → Retest
+      </p>
       <ol>{% for check in result.checks %}<li>{{ check }}</li>{% endfor %}</ol>
     </section>
 
     <section class="card safety" aria-labelledby="safety-title">
       <h2 id="safety-title">Safety</h2>
+      <p class="section-intro">Follow safe electrical procedures throughout every check.</p>
       <ul>{% for note in result.safety %}<li>{{ note }}</li>{% endfor %}</ul>
     </section>
     {% endif %}

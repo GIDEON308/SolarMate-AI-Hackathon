@@ -62,7 +62,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   box-sizing: border-box;
   width: 100%;
   min-height: 2.7rem;
@@ -73,7 +74,8 @@ select {
 }
 
 input[aria-invalid="true"],
-select[aria-invalid="true"] {
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
   border: 2px solid #b44932;
 }
 
@@ -93,6 +95,13 @@ button {
 .field-error {
   color: #963a28;
   margin: .25rem 0 0;
+}
+
+.field-warning {
+  color: #6b5200;
+  background: #fff8df;
+  margin: .25rem 0 0;
+  padding: .4rem;
 }
 
 .card h2 {

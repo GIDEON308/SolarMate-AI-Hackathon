@@ -103,6 +103,121 @@ class FlaskRouteTests(unittest.TestCase):
         self.assertIn('value="2"', page)
         self.assertNotIn("Nominal battery energy:", page)
 
+    def test_malformed_optional_under_load_voltage_warns_and_preserves_primary_analysis(self):
+        values = dict(PRIMARY_CASE, battery_bank_voltage_under_load="invalid-reading")
+
+        response = self.client.post("/", data=values)
+        page = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('name="battery_bank_voltage_under_load"', page)
+        self.assertIn('type="text" inputmode="decimal"', page)
+        self.assertIn('value="invalid-reading"', page)
+        self.assertIn(
+            "Enter a finite number greater than 0 V for battery-bank voltage under load; "
+            "this reading was not used.",
+            page,
+        )
+        self.assertIn("Nominal battery energy: 5.28 kWh", page)
+        self.assertIn("41.7 A", page)
+        self.assertIn("28.6% of continuous rating", page)
+        self.assertNotIn("invalid-reading V", page)
+
+    def test_blank_optional_readings_and_observations_stay_absent(self):
+        response = self.client.post("/", data=PRIMARY_CASE)
+        page = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("No valid real field measurements were provided", page)
+        self.assertNotIn("role=\"status\"", page)
+        self.assertNotIn("Technician-provided field measurement:", page)
+
+    def test_valid_optional_readings_are_distinct_from_calculated_results(self):
+        values = dict(
+            PRIMARY_CASE,
+            battery_bank_voltage_at_rest="25.4",
+            battery_bank_voltage_under_load="23.8",
+            individual_battery_voltages_at_rest="12.7, 12.7",
+            individual_battery_voltages_under_load="11.9, 11.9",
+            measured_actual_load_w="920",
+            inverter_alarm_code="E01",
+            field_notes="Voltage dips as the pump starts.",
+        )
+
+        response = self.client.post("/", data=values)
+        page = response.get_data(as_text=True)
+        measurements = page.split(
+            '<section class="card" aria-labelledby="measurements-title">', 1
+        )[1].split("</section>", 1)[0]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Battery-bank voltage at rest", page)
+        self.assertIn("25.4 V", page)
+        self.assertIn("Battery-bank voltage under load", page)
+        self.assertIn("23.8 V", page)
+        self.assertIn("Individual battery voltages at rest", page)
+        self.assertRegex(
+            measurements,
+            r"Individual battery voltages at rest \(technician-provided field measurement\):</strong>\s*12\.7,\s*12\.7\s*V",
+        )
+        self.assertIn("Individual battery voltages under load", page)
+        self.assertRegex(
+            measurements,
+            r"Individual battery voltages under load \(technician-provided field measurement\):</strong>\s*11\.9,\s*11\.9\s*V",
+        )
+        self.assertIn("Measured actual load (technician-provided field measurement)", page)
+        self.assertIn("920 W", page)
+        self.assertIn("Inverter alarm / fault code (technician observation)", page)
+        self.assertIn("E01", page)
+        self.assertIn("Technician field notes (technician observation)", page)
+        self.assertIn("Voltage dips as the pump starts.", page)
+        self.assertIn("Estimated DC current before inverter losses:", page)
+        self.assertIn("41.7 A", page)
+        self.assertIn("28.6% of continuous rating", page)
+
+    def test_invalid_optional_readings_warn_preserve_raw_values_and_are_excluded(self):
+        values = dict(
+            PRIMARY_CASE,
+            battery_bank_voltage_at_rest="not-a-voltage",
+            battery_bank_voltage_under_load="invalid-reading",
+            individual_battery_voltages_at_rest="12.4, invalid",
+            individual_battery_voltages_under_load="Infinity, 11.9",
+            measured_actual_load_w="0",
+        )
+
+        response = self.client.post("/", data=values)
+        page = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        for raw_value in (
+            "not-a-voltage",
+            "invalid-reading",
+            "12.4, invalid",
+            "Infinity, 11.9",
+            "value=\"0\"",
+        ):
+            self.assertIn(raw_value, page)
+        self.assertIn(
+            "Enter a finite number greater than 0 V for battery-bank voltage at rest; "
+            "this reading was not used.",
+            page,
+        )
+        self.assertIn(
+            "Enter finite numbers greater than 0, separated by commas for individual battery voltages at rest; "
+            "these readings were not used.",
+            page,
+        )
+        self.assertIn(
+            "Enter a finite number greater than 0 W for measured actual load; "
+            "this reading was not used.",
+            page,
+        )
+        self.assertNotIn("Technician-provided field measurement): 12.4", page)
+        self.assertNotIn("Technician-provided field measurement): 23.8", page)
+        self.assertIn("Nominal battery energy: 5.28 kWh", page)
+        self.assertIn("41.7 A", page)
+        self.assertIn("28.6% of continuous rating", page)
+
 
 if __name__ == "__main__":
     unittest.main()

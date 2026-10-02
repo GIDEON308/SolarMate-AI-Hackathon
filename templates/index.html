@@ -84,6 +84,61 @@
           </select>
         </div>
         <div>
+          <label for="battery_bank_voltage_under_load">Battery-bank voltage under load (V, optional field measurement)</label>
+          <input id="battery_bank_voltage_under_load" name="battery_bank_voltage_under_load"
+                 type="text" inputmode="decimal"
+                 value="{{ values.battery_bank_voltage_under_load }}"
+                 aria-invalid="{{ 'true' if result and 'battery_bank_voltage_under_load' in result.measurement_warnings else 'false' }}">
+          {% if result and 'battery_bank_voltage_under_load' in result.measurement_warnings %}
+          <p class="field-warning" role="status">{{ result.measurement_warnings.battery_bank_voltage_under_load }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="battery_bank_voltage_at_rest">Battery-bank voltage at rest (V, optional field measurement)</label>
+          <input id="battery_bank_voltage_at_rest" name="battery_bank_voltage_at_rest"
+                 type="text" inputmode="decimal" value="{{ values.battery_bank_voltage_at_rest }}"
+                 aria-invalid="{{ 'true' if result and 'battery_bank_voltage_at_rest' in result.measurement_warnings else 'false' }}">
+          {% if result and 'battery_bank_voltage_at_rest' in result.measurement_warnings %}
+          <p class="field-warning" role="status">{{ result.measurement_warnings.battery_bank_voltage_at_rest }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="individual_battery_voltages_at_rest">Individual battery voltages at rest (V, comma-separated, optional field measurements)</label>
+          <input id="individual_battery_voltages_at_rest" name="individual_battery_voltages_at_rest"
+                 type="text" inputmode="decimal" value="{{ values.individual_battery_voltages_at_rest }}"
+                 aria-invalid="{{ 'true' if result and 'individual_battery_voltages_at_rest' in result.measurement_warnings else 'false' }}">
+          {% if result and 'individual_battery_voltages_at_rest' in result.measurement_warnings %}
+          <p class="field-warning" role="status">{{ result.measurement_warnings.individual_battery_voltages_at_rest }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="individual_battery_voltages_under_load">Individual battery voltages under load (V, comma-separated, optional field measurements)</label>
+          <input id="individual_battery_voltages_under_load" name="individual_battery_voltages_under_load"
+                 type="text" inputmode="decimal" value="{{ values.individual_battery_voltages_under_load }}"
+                 aria-invalid="{{ 'true' if result and 'individual_battery_voltages_under_load' in result.measurement_warnings else 'false' }}">
+          {% if result and 'individual_battery_voltages_under_load' in result.measurement_warnings %}
+          <p class="field-warning" role="status">{{ result.measurement_warnings.individual_battery_voltages_under_load }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="measured_actual_load_w">Measured actual load (W, optional field measurement)</label>
+          <input id="measured_actual_load_w" name="measured_actual_load_w"
+                 type="text" inputmode="decimal" value="{{ values.measured_actual_load_w }}"
+                 aria-invalid="{{ 'true' if result and 'measured_actual_load_w' in result.measurement_warnings else 'false' }}">
+          {% if result and 'measured_actual_load_w' in result.measurement_warnings %}
+          <p class="field-warning" role="status">{{ result.measurement_warnings.measured_actual_load_w }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="inverter_alarm_code">Inverter alarm / fault code (optional technician observation)</label>
+          <input id="inverter_alarm_code" name="inverter_alarm_code" type="text"
+                 value="{{ values.inverter_alarm_code }}">
+        </div>
+        <div>
+          <label for="field_notes">Field notes (optional technician observation)</label>
+          <textarea id="field_notes" name="field_notes" rows="3">{{ values.field_notes }}</textarea>
+        </div>
+        <div>
           <label for="inverter_rating_w">Inverter continuous rating (W)</label>
           <input id="inverter_rating_w" name="inverter_rating_w" type="number" min="0" step="any" required
                  value="{{ values.inverter_rating_w }}"
@@ -137,6 +192,14 @@
       <p><strong>Calculated values above</strong> are based on entered specifications.
         They are not actual field measurements.</p>
       <p>{{ result.measurements_status }}</p>
+      {% for measurement in result.field_measurements %}
+      <p><strong>{{ measurement.label }} (technician-provided field measurement):</strong>
+        {{ measurement.readings|join(", ") }} {{ measurement.unit }}</p>
+      {% endfor %}
+      {% for observation in result.technician_observations %}
+      <p><strong>{{ observation.label }} (technician observation):</strong>
+        {{ observation.value }}</p>
+      {% endfor %}
     </section>
 
     <section class="card" aria-labelledby="checks-title">

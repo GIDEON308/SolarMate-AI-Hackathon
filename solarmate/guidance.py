@@ -40,10 +40,17 @@ def guidance_for_case(result):
         "not a measured battery current. Actual battery current can be higher "
         "because the inverter is not 100% efficient."
     )
-    measurements_status = (
-        "No real field measurements were provided. Measure actual values "
-        "safely before drawing conclusions."
-    )
+    if not result["field_measurements"]:
+        measurements_status = (
+            "No valid real field measurements were provided. Measure actual "
+            "values safely before drawing conclusions."
+        )
+    else:
+        measurements_status = (
+            "The readings below are real field measurements supplied by the "
+            "technician. They are not calculated values; additional readings "
+            "may still be needed to assess possible causes."
+        )
 
     return {
         "energy_explanation": energy_explanation,

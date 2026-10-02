@@ -11,6 +11,13 @@ FORM_FIELDS = (
     "inverter_rating_w",
     "load_w",
     "symptom",
+    "battery_bank_voltage_at_rest",
+    "battery_bank_voltage_under_load",
+    "individual_battery_voltages_at_rest",
+    "individual_battery_voltages_under_load",
+    "measured_actual_load_w",
+    "inverter_alarm_code",
+    "field_notes",
 )
 
 SUPPORTED_SYSTEM_VOLTAGES = {"12", "24", "48"}
@@ -22,6 +29,25 @@ SUPPORTED_SYMPTOMS = {
     "unexpected_shutdown": "Inverter switches off unexpectedly",
     "other": "Other",
 }
+
+
+OPTIONAL_DECIMAL_FIELDS = (
+    ("battery_bank_voltage_at_rest", "Battery-bank voltage at rest", "V"),
+    ("battery_bank_voltage_under_load", "Battery-bank voltage under load", "V"),
+    ("measured_actual_load_w", "Measured actual load", "W"),
+)
+
+OPTIONAL_DECIMAL_LIST_FIELDS = (
+    (
+        "individual_battery_voltages_at_rest",
+        "Individual battery voltages at rest",
+    ),
+    (
+        "individual_battery_voltages_under_load",
+        "Individual battery voltages under load",
+    ),
+)
+
 
 def _parse_positive_decimal(raw_value, field, label, errors):
     if not raw_value:
@@ -41,6 +67,40 @@ def _parse_positive_decimal(raw_value, field, label, errors):
         errors[field] = f"{label} must be greater than 0."
         return None
     return value
+
+
+def _optional_decimal(raw_value, label, unit):
+    if not raw_value.strip():
+        return None, None
+
+    try:
+        value = Decimal(raw_value)
+    except (InvalidOperation, ValueError):
+        value = None
+
+    if value is None or not value.is_finite() or value <= 0:
+        return None, (
+            f"Enter a finite number greater than 0 {unit} for {label.lower()}; "
+            f"this reading was not used."
+        )
+    return value, None
+
+
+def _optional_decimal_list(raw_value, label):
+    if not raw_value.strip():
+        return None, None
+
+    try:
+        readings = tuple(Decimal(part.strip()) for part in raw_value.split(","))
+    except (InvalidOperation, ValueError):
+        readings = ()
+
+    if not readings or any(not value.is_finite() or value <= 0 for value in readings):
+        return None, (
+            f"Enter finite numbers greater than 0, separated by commas for {label.lower()}; "
+            "these readings were not used."
+        )
+    return readings, None
 
 
 def _display_decimal(value, places):
@@ -128,6 +188,40 @@ def analyze_case(values):
         errors["_form"] = message
         return errors, None
 
+    field_measurements = []
+    measurement_warnings = {}
+    for field, label, unit in OPTIONAL_DECIMAL_FIELDS:
+        value, warning = _optional_decimal(values.get(field, ""), label, unit)
+        if warning:
+            measurement_warnings[field] = warning
+        elif value is not None:
+            field_measurements.append(
+                {"label": label, "readings": (format(value, "f"),), "unit": unit}
+            )
+
+    for field, label in OPTIONAL_DECIMAL_LIST_FIELDS:
+        readings, warning = _optional_decimal_list(values.get(field, ""), label)
+        if warning:
+            measurement_warnings[field] = warning
+        elif readings is not None:
+            field_measurements.append(
+                {
+                    "label": label,
+                    "readings": tuple(format(value, "f") for value in readings),
+                    "unit": "V",
+                }
+            )
+
+    observations = []
+    alarm_code = values.get("inverter_alarm_code", "").strip()
+    field_notes = values.get("field_notes", "").strip()
+    if alarm_code:
+        observations.append(
+            {"label": "Inverter alarm / fault code", "value": alarm_code}
+        )
+    if field_notes:
+        observations.append({"label": "Technician field notes", "value": field_notes})
+
     energy_wh = bank_voltage * bank_capacity
     energy_kwh = energy_wh / Decimal(1000)
     estimated_current = load / system_voltage
@@ -171,5 +265,8 @@ def analyze_case(values):
         "inverter_interpretation": inverter_interpretation,
         "battery_type": values.get("battery_type", ""),
         "symptom": SUPPORTED_SYMPTOMS[symptom],
+        "field_measurements": tuple(field_measurements),
+        "technician_observations": tuple(observations),
+        "measurement_warnings": measurement_warnings,
     }
     return {}, result

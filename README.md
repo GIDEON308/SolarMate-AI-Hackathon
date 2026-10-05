@@ -51,14 +51,21 @@ Enter these system details:
 - Connection: **Series**
 - Battery type: **Tubular lead-acid**
 - Inverter continuous rating: **3500W**
-- Approximate load: **1000W**
+- Approximate load: **1500W**
 - Symptom: **Inverter shuts down under load**
+- Example technician-entered field readings:
+  - Battery-bank voltage at rest: **25.4V**
+  - Battery-bank voltage under load: **21.8V**
+  - Individual battery voltages at rest: **12.7V, 12.7V**
+  - Individual battery voltages under load: **10.4V, 11.4V**
 
 The calculated results should show a **24V / 220Ah** bank, **5.28kWh nominal
-battery energy**, **41.7A estimated DC current before inverter losses**, and
-**28.6% inverter loading**. These are calculations, not field measurements.
-Use the ordered troubleshooting checks and verify with safe real measurements
-and manufacturer specifications.
+battery energy**, **62.5A estimated DC current before inverter losses**, and
+**42.9% inverter loading**. These calculations are not field measurements.
+The readings above are example technician-entered measurements. Voltage
+differences do not by themselves confirm battery failure. Use the ordered
+troubleshooting checks and verify with safe real measurements and manufacturer
+specifications.
 
 When valid field readings are supplied, the results also include an
 **Evidence-Based Findings** section comparing bank voltage at rest and under

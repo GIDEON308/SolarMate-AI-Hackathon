@@ -208,6 +208,12 @@
       {% endfor %}
     </section>
 
+    <section class="card evidence-findings-card" aria-labelledby="evidence-findings-title">
+      <h2 id="evidence-findings-title">Evidence-Based Findings</h2>
+      <p class="section-intro">These findings compare valid entered values. Voltage differences alone do not confirm a failed component.</p>
+      <ul>{% for finding in result.evidence_findings %}<li>{{ finding }}</li>{% endfor %}</ul>
+    </section>
+
     <section class="card" aria-labelledby="checks-title">
       <h2 id="checks-title">Troubleshooting Checks</h2>
       <p class="check-flow" aria-label="Troubleshooting sequence">

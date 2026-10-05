@@ -160,6 +160,10 @@ button {
   background: #eaf1f6;
 }
 
+.evidence-findings-card {
+  border-top: 4px solid #8a6a12;
+}
+
 .result-card {
   scroll-margin-top: 1rem;
 }

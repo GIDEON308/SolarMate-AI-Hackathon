@@ -59,3 +59,9 @@ battery energy**, **41.7A estimated DC current before inverter losses**, and
 **28.6% inverter loading**. These are calculations, not field measurements.
 Use the ordered troubleshooting checks and verify with safe real measurements
 and manufacturer specifications.
+
+When valid field readings are supplied, the results also include an
+**Evidence-Based Findings** section comparing bank voltage at rest and under
+load, differences between individual battery readings, and the entered load
+against the inverter's continuous rating. Voltage differences may suggest an
+imbalance or connection issue, but do not by themselves confirm battery failure.

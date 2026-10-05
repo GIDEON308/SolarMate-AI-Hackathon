@@ -73,6 +73,31 @@ class FlaskRouteTests(unittest.TestCase):
         )
         self.assertEqual(rendered_checks, list(TROUBLESHOOTING_CHECKS))
 
+    def test_evidence_findings_render_after_measurements_before_checks(self):
+        values = dict(
+            PRIMARY_CASE,
+            battery_bank_voltage_at_rest="25.4",
+            battery_bank_voltage_under_load="21.8",
+            individual_battery_voltages_under_load="10.4, 11.4",
+        )
+
+        response = self.client.post("/", data=values)
+        page = response.get_data(as_text=True)
+
+        measurements_position = page.index('aria-labelledby="measurements-title"')
+        findings_position = page.index('aria-labelledby="evidence-findings-title"')
+        checks_position = page.index('aria-labelledby="checks-title"')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertLess(measurements_position, findings_position)
+        self.assertLess(findings_position, checks_position)
+        self.assertIn("Evidence-Based Findings", page)
+        self.assertIn("Battery-bank voltage dropped by 3.6 V", page)
+        self.assertIn("span 1.0 V, from 10.4 V to 11.4 V", page)
+        self.assertIn("may indicate battery imbalance or a connection issue", page)
+        self.assertIn("do not confirm battery failure", page)
+        self.assertIn("entered load (1000 W) is below the inverter&#39;s", page)
+
     def test_readme_and_styles_include_local_run_and_responsive_layout(self):
         project_root = Path(__file__).resolve().parents[1]
         readme = (project_root / "README.md").read_text(encoding="utf-8")
@@ -158,6 +183,7 @@ class FlaskRouteTests(unittest.TestCase):
         self.assertIn("41.7 A", page)
         self.assertIn("28.6% of continuous rating", page)
         self.assertNotIn("invalid-reading V", page)
+        self.assertNotIn("Battery-bank voltage dropped by", page)
 
     def test_blank_optional_readings_and_observations_stay_absent(self):
         response = self.client.post("/", data=PRIMARY_CASE)

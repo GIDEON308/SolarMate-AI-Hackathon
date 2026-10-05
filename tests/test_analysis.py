@@ -53,6 +53,52 @@ class AnalyzeCaseTests(unittest.TestCase):
         self.assertEqual(parallel_result["bank_voltage"], Decimal("12"))
         self.assertEqual(parallel_result["bank_capacity_ah"], Decimal("440"))
 
+    def test_evidence_findings_compare_valid_readings_cautiously(self):
+        values = dict(
+            PRIMARY_CASE,
+            battery_bank_voltage_at_rest="25.4",
+            battery_bank_voltage_under_load="21.8",
+            individual_battery_voltages_at_rest="12.4, 13.0",
+            individual_battery_voltages_under_load="10.4, 11.4",
+        )
+
+        errors, result = analyze_case(values)
+
+        self.assertEqual(errors, {})
+        self.assertEqual(
+            result["evidence_findings"],
+            (
+                "Battery-bank voltage dropped by 3.6 V, from 25.4 V at rest to "
+                "21.8 V under load.",
+                "Individual battery voltages at rest span 0.6 V, from 12.4 V to "
+                "13.0 V. This may indicate battery imbalance or a connection "
+                "issue; voltage readings alone do not confirm battery failure.",
+                "Individual battery voltages under load span 1.0 V, from 10.4 V "
+                "to 11.4 V. This may indicate battery imbalance or a connection "
+                "issue; voltage readings alone do not confirm battery failure.",
+                "The entered load (1000 W) is below the inverter's continuous "
+                "rating (3500 W).",
+            ),
+        )
+
+    def test_evidence_findings_report_load_at_or_above_inverter_rating(self):
+        matching_values = dict(PRIMARY_CASE, load_w="3500")
+        exceeding_values = dict(PRIMARY_CASE, load_w="4000")
+
+        _, matching_result = analyze_case(matching_values)
+        _, exceeding_result = analyze_case(exceeding_values)
+
+        self.assertIn(
+            "The entered load (3500 W) matches the inverter's continuous "
+            "rating (3500 W).",
+            matching_result["evidence_findings"],
+        )
+        self.assertIn(
+            "The entered load (4000 W) exceeds the inverter's continuous "
+            "rating (3500 W).",
+            exceeding_result["evidence_findings"],
+        )
+
     def test_required_input_error_blocks_analysis(self):
         values = dict(PRIMARY_CASE, battery_capacity_ah="")
 

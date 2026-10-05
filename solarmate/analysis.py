@@ -189,12 +189,14 @@ def analyze_case(values):
         return errors, None
 
     field_measurements = []
+    valid_measurements = {}
     measurement_warnings = {}
     for field, label, unit in OPTIONAL_DECIMAL_FIELDS:
         value, warning = _optional_decimal(values.get(field, ""), label, unit)
         if warning:
             measurement_warnings[field] = warning
         elif value is not None:
+            valid_measurements[field] = value
             field_measurements.append(
                 {"label": label, "readings": (format(value, "f"),), "unit": unit}
             )
@@ -204,6 +206,7 @@ def analyze_case(values):
         if warning:
             measurement_warnings[field] = warning
         elif readings is not None:
+            valid_measurements[field] = readings
             field_measurements.append(
                 {
                     "label": label,
@@ -245,6 +248,59 @@ def analyze_case(values):
             "Verify the actual load and equipment specifications."
         )
 
+    evidence_findings = []
+    voltage_at_rest = valid_measurements.get("battery_bank_voltage_at_rest")
+    voltage_under_load = valid_measurements.get("battery_bank_voltage_under_load")
+    if voltage_at_rest is not None and voltage_under_load is not None:
+        voltage_change = voltage_at_rest - voltage_under_load
+        if voltage_change > 0:
+            evidence_findings.append(
+                f"Battery-bank voltage dropped by {format(voltage_change, 'f')} V, "
+                f"from {format(voltage_at_rest, 'f')} V at rest to "
+                f"{format(voltage_under_load, 'f')} V under load."
+            )
+        elif voltage_change < 0:
+            evidence_findings.append(
+                f"Battery-bank voltage increased by {format(abs(voltage_change), 'f')} V "
+                f"under load, from {format(voltage_at_rest, 'f')} V at rest to "
+                f"{format(voltage_under_load, 'f')} V under load."
+            )
+        else:
+            evidence_findings.append(
+                f"Battery-bank voltage was unchanged at {format(voltage_at_rest, 'f')} V "
+                "between the at-rest and under-load readings."
+            )
+
+    for field, condition in (
+        ("individual_battery_voltages_at_rest", "at rest"),
+        ("individual_battery_voltages_under_load", "under load"),
+    ):
+        readings = valid_measurements.get(field)
+        if readings is not None and len(readings) > 1:
+            lowest = min(readings)
+            highest = max(readings)
+            difference = highest - lowest
+            if difference > 0:
+                evidence_findings.append(
+                    f"Individual battery voltages {condition} span "
+                    f"{format(difference, 'f')} V, from {format(lowest, 'f')} V "
+                    f"to {format(highest, 'f')} V. This may indicate battery "
+                    "imbalance or a connection issue; voltage readings alone "
+                    "do not confirm battery failure."
+                )
+
+    load_relation = (
+        "is below"
+        if load < inverter_rating
+        else "matches"
+        if load == inverter_rating
+        else "exceeds"
+    )
+    evidence_findings.append(
+        f"The entered load ({format(load, 'f')} W) {load_relation} the inverter's "
+        f"continuous rating ({format(inverter_rating, 'f')} W)."
+    )
+
     result = {
         "system_voltage": system_voltage,
         "battery_quantity": quantity,
@@ -268,5 +324,6 @@ def analyze_case(values):
         "field_measurements": tuple(field_measurements),
         "technician_observations": tuple(observations),
         "measurement_warnings": measurement_warnings,
+        "evidence_findings": tuple(evidence_findings),
     }
     return {}, result
